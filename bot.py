@@ -4,8 +4,8 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import json
 
 # ВСТАВЬ СЮДА СВОЙ ТОКЕН И ID ГРУППЫ
-TOKEN = 'a86ca9afa86ca9afa86ca9afd6ab2f3f5aaa86ca86ca9afc2cda087435b2bb49feaab31'
-GROUP_ID = '-236661576'
+TOKEN = 'ca4b2ddfca4b2ddfca4b2ddf02c908b2d5cca4bca4b2ddfa0e912674a3eb6b7330b0cb0'
+GROUP_ID = '-239491424'
 
 vk_session = vk_api.VkApi(token=TOKEN)
 longpoll = VkBotLongPoll(vk_session, GROUP_ID)
