@@ -3,15 +3,23 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import json
 
-# ВСТАВЬ СЮДА СВОЙ ТОКЕН И ID ГРУППЫ
-TOKEN = 'ca4b2ddfca4b2ddfca4b2ddf02c908b2d5cca4bca4b2ddfa0e912674a3eb6b7330b0cb0'
-GROUP_ID = '-239491424'
+# ВСТАВЬ СЮДА СВОЙ КЛЮЧ (тот, который ты получила при создании приложения)
+TOKEN = 'a86ca9afa86ca9afa86ca9afd6ab2f3f5aaa86ca86ca9afc2cda087435b2bb49feaab31'
+GROUP_ID = '-236661576'
 
 vk_session = vk_api.VkApi(token=TOKEN)
-longpoll = VkBotLongPoll(vk_session, GROUP_ID)
 vk = vk_session.get_api()
 
-# Хранилище ответов пользователей
+# Бот сам включит Longpoll API при запуске
+clean_id = GROUP_ID.replace('-', '')
+try:
+    vk.groups.setLongPollSettings(group_id=clean_id, enabled=True, api_version="5.199")
+    print("Longpoll API включен автоматически!")
+except Exception as e:
+    print(f"Ошибка при включении Longpoll: {e}")
+
+longpoll = VkBotLongPoll(vk_session, clean_id)
+
 user_progress = {}
 
 def get_keyboard(step):
@@ -37,7 +45,7 @@ def get_keyboard(step):
     elif step == 4:
         kb.add_button('🔄 Пройти заново', color=VkKeyboardColor.SECONDARY, payload=json.dumps({"command": "restart"}))
         kb.add_line()
-        kb.add_button(' Внедрить под ключ', color=VkKeyboardColor.POSITIVE, payload=json.dumps({"command": "consult"}))
+        kb.add_button('🚀 Внедрить под ключ', color=VkKeyboardColor.POSITIVE, payload=json.dumps({"command": "consult"}))
     return kb.get_keyboard()
 
 def send_msg(user_id, text, step=None):
@@ -48,20 +56,18 @@ for event in longpoll.listen():
     if event.type == VkBotEventType.MESSAGE_NEW:
         msg = event.obj.message
         user_id = msg['from_id']
-        text = msg['text']
+        text = msg.get('text', '').lower()
         
-        # Обработка нажатий на кнопки (payload)
         if 'payload' in msg and msg['payload']:
             payload = json.loads(msg['payload'])
             cmd = payload.get('command')
             
-            if cmd == 'restart' or text.lower() == 'начать':
+            if cmd == 'restart' or text == 'начать':
                 user_progress[user_id] = {'step': 1}
                 send_msg(user_id, "🎮 Привет! Давай подберем идеальную механику запуска. Что вы продаете?", 1)
                 
             elif cmd == 'consult':
-                # Замени club_ТВОЙ_ID на ссылку на диалог с твоим ботом
-                send_msg(user_id, "Отлично! Напишите мне в личные сообщения, и мы обсудим настройку вашей воронки: https://vk.me/club_ТВОЙ_ID")
+                send_msg(user_id, "Отлично! Напишите мне в личные сообщения, и мы обсудим настройку вашей воронки: https://vk.me/club239491424")
                 
             elif user_id in user_progress:
                 step = user_progress[user_id]['step']
@@ -77,35 +83,20 @@ for event in longpoll.listen():
                     send_msg(user_id, "Сколько ресурсов (времени/денег) готовы вложить?", 3)
                     
                 elif step == 3:
-                    # Формируем финальный ответ
                     product = user_progress[user_id]['product']
                     goal = user_progress[user_id]['goal']
                     
                     if product == 'uslugi' and goal == 'prodazhi':
-                        result = "🔥 ВАША МЕХАНИКА: БЛИЦ-АУКЦИОН\n\n" \
-                                 " ПЛАН ДЕЙСТВИЙ:\n" \
-                                 "День 1: Пост-анонс с интригой («Завтра разыграем услугу за полцены»).\n" \
-                                 "День 2: Сбор заявок в рассылку. Ограничение: только 10 мест.\n" \
-                                 "День 3: Запуск аукциона в чате. Кто дал последнюю ставку за 5 минут — забирает.\n\n"
+                        result = "🔥 ВАША МЕХАНИКА: БЛИЦ-АУКЦИОН\n\n ПЛАН ДЕЙСТВИЙ:\nДень 1: Пост-анонс с интригой («Завтра разыграем услугу за полцены»).\nДень 2: Сбор заявок в рассылку. Ограничение: только 10 мест.\nДень 3: Запуск аукциона в чате. Кто дал последнюю ставку за 5 минут — забирает.\n\n"
                     elif product == 'tovary':
-                        result = "🎁 ВАША МЕХАНИКА: ТАЙНЫЙ ЯЩИК\n\n" \
-                                 "📝 ПЛАН ДЕЙСТВИЙ:\n" \
-                                 "Шаг 1: Собрать 3 варианта боксов (Эконом, Стандарт, Премиум).\n" \
-                                 "Шаг 2: Сфотографировать только «намеки» на содержимое.\n" \
-                                 "Шаг 3: Анонс в сторис и пост. Продажа только через личные сообщения.\n\n"
+                        result = " ВАША МЕХАНИКА: ТАЙНЫЙ ЯЩИК\n\n📝 ПЛАН ДЕЙСТВИЙ:\nШаг 1: Собрать 3 варианта боксов (Эконом, Стандарт, Премиум).\nШаг 2: Сфотографировать только «намеки» на содержимое.\nШаг 3: Анонс в сторис и пост. Продажа только через личные сообщения.\n\n"
                     else:
-                        result = "🗺️ ВАША МЕХАНИКА: КАРТА СОКРОВИЩ\n\n" \
-                                 "📝 ПЛАН ДЕЙСТВИЙ:\n" \
-                                 "Этап 1: Выдаем бесплатный чек-лист за подписку.\n" \
-                                 "Этап 2: Серия из 3 прогревающих писем с пользой.\n" \
-                                 "Этап 3: Открываем продажу основного продукта со скидкой «для своих».\n\n"
+                        result = "🗺️ ВАША МЕХАНИКА: КАРТА СОКРОВИЩ\n\n📝 ПЛАН ДЕЙСТВИЙ:\nЭтап 1: Выдаем бесплатный чек-лист за подписку.\nЭтап 2: Серия из 3 прогревающих писем с пользой.\nЭтап 3: Открываем продажу основного продукта со скидкой «для своих».\n\n"
                     
-                    result += " ХОТИТЕ ВНЕДРИТЬ ЭТО ПОД КЛЮЧ?\n" \
-                              "Не тратьте время на настройку бота и рассылок. Напишите мне, и я соберу эту автоворонку для вашего бизнеса: https://vk.me/club_ТВОЙ_ID"
+                    result += "🚀 ХОТИТЕ ВНЕДРИТЬ ЭТО ПОД КЛЮЧ?\nНе тратьте время на настройку бота и рассылок. Напишите мне, и я соберу эту автоворонку для вашего бизнеса: https://vk.me/club239491424"
                     
                     send_msg(user_id, result, 4)
         
-        # Обработка обычного текста (если нажали "Начать" текстом)
-        elif text.lower() == 'начать':
+        elif text == 'начать':
             user_progress[user_id] = {'step': 1}
-            send_msg(user_id, "🎮 Привет! Давай подберем идеальную механику запуска. Что вы продаете?", 1)
+            send_msg(user_id, " Привет! Давай подберем идеальную механику запуска. Что вы продаете?", 1)
