@@ -4,7 +4,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import json
 
 # ВСТАВЬ СЮДА СВОЙ КЛЮЧ (тот, который ты получила при создании приложения)
-TOKEN = 'ca4b2ddfca4b2ddfca4b2ddf02c908b2d5cca4bca4b2ddfa0e912674a3eb6b7330b0cb0'
+TOKEN = 'vk1.a.bYSYmkkkCpuauu8SyhRjol9Ga0-dP8G1leITm8ubdLDm0Qd6-rvbxEIDNaQcY8kN805t3mZz9kJ--iD5VzeiH9XFgcNw5aCTN7Cs1q68YrGzSs3YtGPmkvXoKzQE9uzOHCwxKSteXjjNA8o-o1xYz-zuX-pdYcx6okBr8mjLBCHZ5l3nTj98GxXsiZol3qBvJF5oRONhzciltm8iDfys3A'
 GROUP_ID = '-239491424'
 
 vk_session = vk_api.VkApi(token=TOKEN)
