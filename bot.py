@@ -1,4 +1,4 @@
-```python
+python
 import json
 import vk_api
 
@@ -494,4 +494,3 @@ for event in longpoll.listen():
 
         print("❌ Ошибка обработки сообщения:")
         print(repr(e))
-```
