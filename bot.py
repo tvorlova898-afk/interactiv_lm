@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-
 import json
-import os
-import sys
-
 import vk_api
+
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
@@ -15,74 +11,30 @@ GROUP_ID = 239491424
 
 
 # ============================================================
-# ЛОГИ
+# ЗАПУСК
 # ============================================================
 
-LOG_FILE = "/app/data/bot.log"
+print("========================================")
+print("ЗАПУСК БОТА")
+print("========================================")
 
+print("Создаю VK-сессию...")
 
-def log(text):
-    text = str(text)
+vk_session = vk_api.VkApi(token=TOKEN)
+vk = vk_session.get_api()
 
-    # Вывод в рабочий лог Bothost
-    try:
-        sys.stderr.write(text + "\n")
-        sys.stderr.flush()
-    except Exception:
-        pass
+print("VK API: подключение создано")
 
-    # Дополнительно пишем в файл
-    try:
-        os.makedirs("/app/data", exist_ok=True)
+print("Подключаю Bots Long Poll...")
 
-        with open(LOG_FILE, "a", encoding="utf-8") as file:
-            file.write(text + "\n")
-            file.flush()
+longpoll = VkBotLongPoll(vk_session, GROUP_ID)
 
-    except Exception:
-        pass
+print("Bots Long Poll: подключение установлено")
+print("БОТ ЗАПУЩЕН. ОЖИДАЮ СООБЩЕНИЯ.")
 
 
 # ============================================================
-# ПОДКЛЮЧЕНИЕ VK
-# ============================================================
-
-log("========================================")
-log("ЗАПУСК БОТА")
-log("========================================")
-
-try:
-
-    log("Создаю VK-сессию...")
-
-    vk_session = vk_api.VkApi(
-        token=TOKEN
-    )
-
-    vk = vk_session.get_api()
-
-    log("VK API: подключение создано")
-
-    log("Подключаю Bots Long Poll...")
-
-    longpoll = VkBotLongPoll(
-        vk_session,
-        GROUP_ID
-    )
-
-    log("Bots Long Poll: подключение установлено")
-    log("БОТ ЗАПУЩЕН. ОЖИДАЮ СООБЩЕНИЯ.")
-
-
-except Exception as error:
-
-    log("!!! ОШИБКА ЗАПУСКА !!!")
-    log(repr(error))
-    raise
-
-
-# ============================================================
-# ПРОГРЕСС ПОЛЬЗОВАТЕЛЕЙ
+# СОСТОЯНИЕ ПОЛЬЗОВАТЕЛЕЙ
 # ============================================================
 
 user_progress = {}
@@ -94,13 +46,11 @@ user_progress = {}
 
 def get_keyboard(step):
 
-    keyboard = VkKeyboard(
-        one_time=False
-    )
+    kb = VkKeyboard(one_time=False)
 
     if step == 1:
 
-        keyboard.add_button(
+        kb.add_button(
             "Услуги",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -108,9 +58,9 @@ def get_keyboard(step):
             })
         )
 
-        keyboard.add_line()
+        kb.add_line()
 
-        keyboard.add_button(
+        kb.add_button(
             "Товары",
             color=VkKeyboardColor.NEGATIVE,
             payload=json.dumps({
@@ -118,9 +68,9 @@ def get_keyboard(step):
             })
         )
 
-        keyboard.add_line()
+        kb.add_line()
 
-        keyboard.add_button(
+        kb.add_button(
             "Обучение",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -130,7 +80,7 @@ def get_keyboard(step):
 
     elif step == 2:
 
-        keyboard.add_button(
+        kb.add_button(
             "Быстрые продажи",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -138,9 +88,9 @@ def get_keyboard(step):
             })
         )
 
-        keyboard.add_line()
+        kb.add_line()
 
-        keyboard.add_button(
+        kb.add_button(
             "Прогрев",
             color=VkKeyboardColor.NEGATIVE,
             payload=json.dumps({
@@ -148,9 +98,9 @@ def get_keyboard(step):
             })
         )
 
-        keyboard.add_line()
+        kb.add_line()
 
-        keyboard.add_button(
+        kb.add_button(
             "Активация базы",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -160,7 +110,7 @@ def get_keyboard(step):
 
     elif step == 3:
 
-        keyboard.add_button(
+        kb.add_button(
             "Минимум ресурсов",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -168,9 +118,9 @@ def get_keyboard(step):
             })
         )
 
-        keyboard.add_line()
+        kb.add_line()
 
-        keyboard.add_button(
+        kb.add_button(
             "Средне",
             color=VkKeyboardColor.NEGATIVE,
             payload=json.dumps({
@@ -178,9 +128,9 @@ def get_keyboard(step):
             })
         )
 
-        keyboard.add_line()
+        kb.add_line()
 
-        keyboard.add_button(
+        kb.add_button(
             "Максимум",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -190,7 +140,7 @@ def get_keyboard(step):
 
     elif step == 4:
 
-        keyboard.add_button(
+        kb.add_button(
             "🔄 Пройти заново",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -198,9 +148,9 @@ def get_keyboard(step):
             })
         )
 
-        keyboard.add_line()
+        kb.add_line()
 
-        keyboard.add_button(
+        kb.add_button(
             "🚀 Внедрить под ключ",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -208,45 +158,46 @@ def get_keyboard(step):
             })
         )
 
-    return keyboard.get_keyboard()
+    return kb.get_keyboard()
 
 
 # ============================================================
 # ОТПРАВКА СООБЩЕНИЯ
 # ============================================================
 
-def send_message(user_id, text, step=None):
-
-    params = {
-        "user_id": user_id,
-        "message": text,
-        "random_id": get_random_id()
-    }
-
-    if step is not None:
-        params["keyboard"] = get_keyboard(step)
+def send_msg(user_id, text, step=None):
 
     try:
 
-        result = vk.messages.send(
-            **params
+        keyboard = get_keyboard(step) if step else None
+
+        vk.messages.send(
+            user_id=user_id,
+            message=text,
+            random_id=get_random_id(),
+            keyboard=keyboard
         )
 
-        log(
-            "Сообщение отправлено: "
-            + str(user_id)
-            + " / "
-            + str(result)
+        print(
+            "СООБЩЕНИЕ УСПЕШНО ОТПРАВЛЕНО:",
+            user_id
         )
 
-        return result
+    except Exception as e:
 
-    except Exception as error:
+        print("========================================")
+        print("ОШИБКА VK ПРИ ОТПРАВКЕ")
+        print("Тип ошибки:", type(e).__name__)
+        print("str(e):", str(e))
+        print("repr(e):", repr(e))
 
-        log(
-            "ОШИБКА ОТПРАВКИ СООБЩЕНИЯ: "
-            + repr(error)
-        )
+        if hasattr(e, "code"):
+            print("КОД ОШИБКИ:", e.code)
+
+        if hasattr(e, "error"):
+            print("ДАННЫЕ ОШИБКИ:", e.error)
+
+        print("========================================")
 
         raise
 
@@ -261,7 +212,7 @@ def start_test(user_id):
         "step": 1
     }
 
-    send_message(
+    send_msg(
         user_id,
         "🎮 Привет! Давай подберём идеальную механику запуска.\n\n"
         "Что вы продаёте?",
@@ -346,259 +297,218 @@ def get_result(product, goal, resources):
 
 
 # ============================================================
-# ПОЛУЧЕНИЕ КОМАНДЫ ИЗ КНОПКИ
-# ============================================================
-
-def get_command(message):
-
-    payload = message.get("payload")
-
-    if not payload:
-        return None
-
-    if isinstance(payload, str):
-
-        try:
-            payload = json.loads(payload)
-
-        except (json.JSONDecodeError, TypeError):
-
-            return None
-
-    if isinstance(payload, dict):
-
-        return payload.get("command")
-
-    return None
-
-
-# ============================================================
 # ОСНОВНОЙ ЦИКЛ
 # ============================================================
 
-try:
+for event in longpoll.listen():
 
-    for event in longpoll.listen():
+    try:
 
-        try:
+        if event.type != VkBotEventType.MESSAGE_NEW:
+            continue
 
-            if event.type != VkBotEventType.MESSAGE_NEW:
-                continue
+        # Для vk_api 11.10.1
+        message = event.message
 
+        if not message:
+            print("Получено сообщение без данных message")
+            continue
 
-            # ВАЖНО:
-            # Для MESSAGE_NEW в vk_api сообщение находится
-            # в event.message.
-            message = event.message
+        user_id = message.get("from_id")
+        text = (message.get("text") or "").strip().lower()
 
-            if message is None:
-                log("Получено событие без объекта message")
-                continue
+        payload = message.get("payload")
 
+        command = None
 
-            user_id = message.get("from_id")
+        if payload:
 
-            text = (
-                message.get("text") or ""
-            ).strip().lower()
+            try:
 
+                if isinstance(payload, str):
+                    payload = json.loads(payload)
 
-            command = get_command(
-                message
+                if isinstance(payload, dict):
+                    command = payload.get("command")
+
+            except (
+                json.JSONDecodeError,
+                TypeError,
+                AttributeError
+            ):
+
+                command = None
+
+        print(
+            "ВХОДЯЩЕЕ СООБЩЕНИЕ:",
+            "user_id=",
+            user_id,
+            "text=",
+            repr(text),
+            "command=",
+            repr(command)
+        )
+
+        # ----------------------------------------------------
+        # НАЧАТЬ / ЗАНОВО
+        # ----------------------------------------------------
+
+        if text == "начать" or command == "restart":
+
+            start_test(user_id)
+            continue
+
+        # ----------------------------------------------------
+        # КОНСУЛЬТАЦИЯ
+        # ----------------------------------------------------
+
+        if command == "consult":
+
+            send_msg(
+                user_id,
+                "🚀 Отлично!\n\n"
+                "Напишите мне в личные сообщения, и обсудим "
+                "настройку вашей воронки:\n"
+                "https://vk.me/club239491424"
             )
 
+            continue
 
-            log(
-                "ВХОДЯЩЕЕ СООБЩЕНИЕ: "
-                "user_id="
-                + str(user_id)
-                + ", text="
-                + repr(text)
-                + ", command="
-                + repr(command)
+        # ----------------------------------------------------
+        # ПОЛЬЗОВАТЕЛЬ ЕЩЁ НЕ НАЧАЛ ТЕСТ
+        # ----------------------------------------------------
+
+        if user_id not in user_progress:
+
+            send_msg(
+                user_id,
+                "Чтобы начать тест, напишите «Начать»."
             )
 
+            continue
 
-            # ------------------------------------------------
-            # НАЧАТЬ / ПОВТОРИТЬ
-            # ------------------------------------------------
+        step = user_progress[user_id]["step"]
 
-            if text == "начать" or command == "restart":
+        # ----------------------------------------------------
+        # ШАГ 1
+        # ----------------------------------------------------
 
-                start_test(
-                    user_id
+        if step == 1:
+
+            if command not in {
+                "uslugi",
+                "tovary",
+                "obuchenie"
+            }:
+
+                send_msg(
+                    user_id,
+                    "Пожалуйста, выберите один из вариантов.",
+                    1
                 )
 
                 continue
 
+            user_progress[user_id]["product"] = command
+            user_progress[user_id]["step"] = 2
 
-            # ------------------------------------------------
-            # КОНСУЛЬТАЦИЯ
-            # ------------------------------------------------
+            send_msg(
+                user_id,
+                "Какая главная цель запуска?",
+                2
+            )
 
-            if command == "consult":
+        # ----------------------------------------------------
+        # ШАГ 2
+        # ----------------------------------------------------
 
-                send_message(
+        elif step == 2:
+
+            if command not in {
+                "prodazhi",
+                "progrev",
+                "aktivaciya"
+            }:
+
+                send_msg(
                     user_id,
-                    "🚀 Отлично!\n\n"
-                    "Напишите мне в личные сообщения, и обсудим "
-                    "настройку вашей воронки:\n"
-                    "https://vk.me/club239491424"
-                )
-
-                continue
-
-
-            # ------------------------------------------------
-            # ЕСЛИ ТЕСТ НЕ НАЧАТ
-            # ------------------------------------------------
-
-            if user_id not in user_progress:
-
-                send_message(
-                    user_id,
-                    "Чтобы начать тест, напишите «Начать»."
-                )
-
-                continue
-
-
-            step = user_progress[user_id]["step"]
-
-
-            # ------------------------------------------------
-            # ШАГ 1
-            # ------------------------------------------------
-
-            if step == 1:
-
-                if command not in {
-                    "uslugi",
-                    "tovary",
-                    "obuchenie"
-                }:
-
-                    send_message(
-                        user_id,
-                        "Пожалуйста, выберите один из вариантов.",
-                        1
-                    )
-
-                    continue
-
-
-                user_progress[user_id]["product"] = command
-                user_progress[user_id]["step"] = 2
-
-
-                send_message(
-                    user_id,
-                    "Какая главная цель запуска?",
+                    "Пожалуйста, выберите один из вариантов.",
                     2
                 )
 
+                continue
 
-            # ------------------------------------------------
-            # ШАГ 2
-            # ------------------------------------------------
+            user_progress[user_id]["goal"] = command
+            user_progress[user_id]["step"] = 3
 
-            elif step == 2:
+            send_msg(
+                user_id,
+                "Сколько ресурсов (времени и денег) готовы вложить?",
+                3
+            )
 
-                if command not in {
-                    "prodazhi",
-                    "progrev",
-                    "aktivaciya"
-                }:
+        # ----------------------------------------------------
+        # ШАГ 3
+        # ----------------------------------------------------
 
-                    send_message(
-                        user_id,
-                        "Пожалуйста, выберите один из вариантов.",
-                        2
-                    )
+        elif step == 3:
 
-                    continue
+            if command not in {
+                "min",
+                "mid",
+                "max"
+            }:
 
-
-                user_progress[user_id]["goal"] = command
-                user_progress[user_id]["step"] = 3
-
-
-                send_message(
+                send_msg(
                     user_id,
-                    "Сколько ресурсов (времени и денег) готовы вложить?",
+                    "Пожалуйста, выберите один из вариантов.",
                     3
                 )
 
+                continue
 
-            # ------------------------------------------------
-            # ШАГ 3
-            # ------------------------------------------------
+            user_progress[user_id]["resources"] = command
 
-            elif step == 3:
-
-                if command not in {
-                    "min",
-                    "mid",
-                    "max"
-                }:
-
-                    send_message(
-                        user_id,
-                        "Пожалуйста, выберите один из вариантов.",
-                        3
-                    )
-
-                    continue
-
-
-                user_progress[user_id]["resources"] = command
-
-
-                result = get_result(
-                    user_progress[user_id]["product"],
-                    user_progress[user_id]["goal"],
-                    user_progress[user_id]["resources"]
-                )
-
-
-                user_progress[user_id]["step"] = 4
-
-
-                send_message(
-                    user_id,
-                    result,
-                    4
-                )
-
-
-            # ------------------------------------------------
-            # ШАГ 4
-            # ------------------------------------------------
-
-            elif step == 4:
-
-                send_message(
-                    user_id,
-                    "Тест уже завершён.\n\n"
-                    "Если хотите пройти его ещё раз, "
-                    "нажмите «Пройти заново».",
-                    4
-                )
-
-
-        except Exception as error:
-
-            log(
-                "ОШИБКА ОБРАБОТКИ СОБЫТИЯ: "
-                + repr(error)
+            result = get_result(
+                user_progress[user_id]["product"],
+                user_progress[user_id]["goal"],
+                user_progress[user_id]["resources"]
             )
 
+            user_progress[user_id]["step"] = 4
 
-except Exception as error:
+            send_msg(
+                user_id,
+                result,
+                4
+            )
 
-    log(
-        "КРИТИЧЕСКАЯ ОШИБКА LONG POLL: "
-        + repr(error)
-    )
+        # ----------------------------------------------------
+        # ШАГ 4
+        # ----------------------------------------------------
 
-    raise
+        elif step == 4:
+
+            send_msg(
+                user_id,
+                "Тест уже завершён.\n\n"
+                "Если хотите пройти его ещё раз, "
+                "нажмите «Пройти заново».",
+                4
+            )
+
+    except Exception as e:
+
+        print("========================================")
+        print("ОШИБКА ОБРАБОТКИ СОБЫТИЯ")
+        print("Тип ошибки:", type(e).__name__)
+        print("str(e):", str(e))
+        print("repr(e):", repr(e))
+
+        if hasattr(e, "code"):
+            print("КОД ОШИБКИ:", e.code)
+
+        if hasattr(e, "error"):
+            print("ДАННЫЕ ОШИБКИ:", e.error)
+
+        print("========================================")
