@@ -1,3 +1,4 @@
+print("=== BOT.PY ЗАПУЩЕН ===", flush=True)
 import json
 import vk_api
 
