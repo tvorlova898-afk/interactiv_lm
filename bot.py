@@ -1,8 +1,6 @@
 import json
-import sys
-import traceback
-
 import vk_api
+
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
@@ -11,69 +9,31 @@ from vk_api.utils import get_random_id
 TOKEN = "vk1.a.Efw0X7zBaULZCW1Nue-9l43ZzkyCryQzDxY6hkI3Xvy9ikOxlU_3NGaaq2Ju-_4dOxbY7kw9bDjXy3BUep633qbKEXPbQB_zv0Y3OyY6Qn4KhK6oJPUMo1F9hadG6rz32U_gR8M2DsNskDCat3DM8EsrxYBNlcTf3XxvuCi3p9qclsz4WEXuwWtAMzy3qi31lC6YGyvHulsxRHVhAlZTrQ"
 GROUP_ID = 239491424
 
-LOG_FILE = "/app/data/bot.log"
 
+print("========================================")
+print("ЗАПУСК БОТА")
+print("========================================")
 
-# ============================================================
-# ЛОГИРОВАНИЕ
-# ============================================================
+print("Создаю VK-сессию...")
 
-def log(message):
-    message = str(message)
+vk_session = vk_api.VkApi(
+    token=TOKEN,
+    api_version="5.199"
+)
 
-    # В рабочий лог Bothost
-    try:
-        sys.stderr.write(message + "\n")
-        sys.stderr.flush()
-    except Exception:
-        pass
+vk = vk_session.get_api()
 
-    # Дополнительно в файл
-    try:
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(message + "\n")
-            f.flush()
-    except Exception:
-        pass
+print("VK API: подключение создано")
 
+print("Подключаю Bots Long Poll...")
 
-# ============================================================
-# ЗАПУСК
-# ============================================================
+longpoll = VkBotLongPoll(
+    vk_session,
+    GROUP_ID
+)
 
-log("========================================")
-log("ЗАПУСК БОТА")
-log("========================================")
-
-try:
-
-    log("Версия vk_api: " + getattr(vk_api, "__version__", "unknown"))
-
-    log("Создаю VK-сессию...")
-
-    vk_session = vk_api.VkApi(token=TOKEN)
-    vk = vk_session.get_api()
-
-    log("VK API: подключение создано")
-
-    log("Подключаю Bots Long Poll...")
-
-    longpoll = VkBotLongPoll(
-        vk_session,
-        GROUP_ID
-    )
-
-    log("Bots Long Poll: подключение установлено")
-    log("БОТ ЗАПУЩЕН. ОЖИДАЮ СООБЩЕНИЯ.")
-
-except Exception as e:
-
-    log("!!! ОШИБКА ЗАПУСКА !!!")
-    log("Тип: " + type(e).__name__)
-    log("Ошибка: " + str(e))
-    log(traceback.format_exc())
-
-    raise
+print("Bots Long Poll: подключение установлено")
+print("БОТ ЗАПУЩЕН. ОЖИДАЮ СООБЩЕНИЯ.")
 
 
 # ============================================================
@@ -84,16 +44,16 @@ user_progress = {}
 
 
 # ============================================================
-# КЛАВИАТУРА
+# КЛАВИАТУРЫ
 # ============================================================
 
 def get_keyboard(step):
 
-    kb = VkKeyboard(one_time=False)
+    keyboard = VkKeyboard(one_time=False)
 
     if step == 1:
 
-        kb.add_button(
+        keyboard.add_button(
             "Услуги",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -101,9 +61,9 @@ def get_keyboard(step):
             })
         )
 
-        kb.add_line()
+        keyboard.add_line()
 
-        kb.add_button(
+        keyboard.add_button(
             "Товары",
             color=VkKeyboardColor.NEGATIVE,
             payload=json.dumps({
@@ -111,9 +71,9 @@ def get_keyboard(step):
             })
         )
 
-        kb.add_line()
+        keyboard.add_line()
 
-        kb.add_button(
+        keyboard.add_button(
             "Обучение",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -123,7 +83,7 @@ def get_keyboard(step):
 
     elif step == 2:
 
-        kb.add_button(
+        keyboard.add_button(
             "Быстрые продажи",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -131,9 +91,9 @@ def get_keyboard(step):
             })
         )
 
-        kb.add_line()
+        keyboard.add_line()
 
-        kb.add_button(
+        keyboard.add_button(
             "Прогрев",
             color=VkKeyboardColor.NEGATIVE,
             payload=json.dumps({
@@ -141,9 +101,9 @@ def get_keyboard(step):
             })
         )
 
-        kb.add_line()
+        keyboard.add_line()
 
-        kb.add_button(
+        keyboard.add_button(
             "Активация базы",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -153,7 +113,7 @@ def get_keyboard(step):
 
     elif step == 3:
 
-        kb.add_button(
+        keyboard.add_button(
             "Минимум ресурсов",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -161,9 +121,9 @@ def get_keyboard(step):
             })
         )
 
-        kb.add_line()
+        keyboard.add_line()
 
-        kb.add_button(
+        keyboard.add_button(
             "Средне",
             color=VkKeyboardColor.NEGATIVE,
             payload=json.dumps({
@@ -171,9 +131,9 @@ def get_keyboard(step):
             })
         )
 
-        kb.add_line()
+        keyboard.add_line()
 
-        kb.add_button(
+        keyboard.add_button(
             "Максимум",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -183,7 +143,7 @@ def get_keyboard(step):
 
     elif step == 4:
 
-        kb.add_button(
+        keyboard.add_button(
             "🔄 Пройти заново",
             color=VkKeyboardColor.SECONDARY,
             payload=json.dumps({
@@ -191,9 +151,9 @@ def get_keyboard(step):
             })
         )
 
-        kb.add_line()
+        keyboard.add_line()
 
-        kb.add_button(
+        keyboard.add_button(
             "🚀 Внедрить под ключ",
             color=VkKeyboardColor.POSITIVE,
             payload=json.dumps({
@@ -201,89 +161,35 @@ def get_keyboard(step):
             })
         )
 
-    return kb.get_keyboard()
+    return keyboard.get_keyboard()
 
 
 # ============================================================
-# ОТПРАВКА СООБЩЕНИЯ
+# ОТПРАВКА
 # ============================================================
 
 def send_msg(user_id, text, step=None):
 
-    log("Пытаюсь отправить сообщение пользователю: " + str(user_id))
+    params = {
+        "user_id": user_id,
+        "message": text,
+        "random_id": get_random_id()
+    }
 
-    try:
+    if step is not None:
+        params["keyboard"] = get_keyboard(step)
 
-        # Сначала отправляем БЕЗ клавиатуры.
-        # Это специально: проверяем сам messages.send.
-        result = vk.messages.send(
-            user_id=user_id,
-            message=text,
-            random_id=get_random_id()
-        )
+    print(
+        "ОТПРАВЛЯЮ СООБЩЕНИЕ:",
+        user_id
+    )
 
-        log("messages.send БЕЗ КЛАВИАТУРЫ: УСПЕШНО")
-        log("Ответ VK: " + repr(result))
+    result = vk.messages.send(**params)
 
-    except Exception as e:
-
-        log("========================================")
-        log("ОШИБКА VK ПРИ messages.send")
-        log("Тип: " + type(e).__name__)
-        log("str: " + str(e))
-        log("repr: " + repr(e))
-
-        if hasattr(e, "code"):
-            log("КОД VK: " + str(e.code))
-
-        if hasattr(e, "error"):
-            log("ДАННЫЕ VK: " + repr(e.error))
-
-        log(traceback.format_exc())
-        log("========================================")
-
-        raise
-
-    # Если клавиатура не нужна — всё.
-    if step is None:
-        return
-
-    # Теперь отдельно проверяем отправку клавиатуры.
-    try:
-
-        keyboard = get_keyboard(step)
-
-        log("Клавиатура сформирована")
-        log("Keyboard: " + repr(keyboard))
-
-        result = vk.messages.send(
-            user_id=user_id,
-            message=text,
-            random_id=get_random_id(),
-            keyboard=keyboard
-        )
-
-        log("messages.send С КЛАВИАТУРОЙ: УСПЕШНО")
-        log("Ответ VK: " + repr(result))
-
-    except Exception as e:
-
-        log("========================================")
-        log("ОШИБКА VK ПРИ messages.send С КЛАВИАТУРОЙ")
-        log("Тип: " + type(e).__name__)
-        log("str: " + str(e))
-        log("repr: " + repr(e))
-
-        if hasattr(e, "code"):
-            log("КОД VK: " + str(e.code))
-
-        if hasattr(e, "error"):
-            log("ДАННЫЕ VK: " + repr(e.error))
-
-        log(traceback.format_exc())
-        log("========================================")
-
-        raise
+    print(
+        "СООБЩЕНИЕ ОТПРАВЛЕНО:",
+        result
+    )
 
 
 # ============================================================
@@ -391,20 +297,18 @@ for event in longpoll.listen():
         if event.type != VkBotEventType.MESSAGE_NEW:
             continue
 
-        # Для MESSAGE_NEW в vk_api 11.10.1
-        # сообщение находится в event.message.
-        message = event.message
+        # В vk_api 11.10.1 для MESSAGE_NEW
+        # данные сообщения находятся здесь.
+        message = event.obj.message
 
         if not message:
-            log("MESSAGE_NEW получено, но event.message пустой")
+            print("Получено событие без message")
             continue
 
-        user_id = message.get("from_id")
-        peer_id = message.get("peer_id")
+        user_id = message["from_id"]
         text = (message.get("text") or "").strip().lower()
 
         payload = message.get("payload")
-
         command = None
 
         if payload:
@@ -425,17 +329,18 @@ for event in longpoll.listen():
 
                 command = None
 
-        log("----------------------------------------")
-        log("ВХОДЯЩЕЕ СООБЩЕНИЕ")
-        log("user_id: " + str(user_id))
-        log("peer_id: " + str(peer_id))
-        log("text: " + repr(text))
-        log("payload: " + repr(payload))
-        log("command: " + repr(command))
-        log("----------------------------------------")
+        print(
+            "ВХОДЯЩЕЕ СООБЩЕНИЕ:",
+            "user_id=",
+            user_id,
+            "text=",
+            repr(text),
+            "command=",
+            repr(command)
+        )
 
         # ----------------------------------------------------
-        # НАЧАТЬ / ЗАНОВО
+        # НАЧАТЬ
         # ----------------------------------------------------
 
         if text == "начать" or command == "restart":
@@ -460,7 +365,7 @@ for event in longpoll.listen():
             continue
 
         # ----------------------------------------------------
-        # ПОЛЬЗОВАТЕЛЬ ЕЩЁ НЕ НАЧАЛ ТЕСТ
+        # НЕ НАЧАЛ ТЕСТ
         # ----------------------------------------------------
 
         if user_id not in user_progress:
@@ -584,17 +489,8 @@ for event in longpoll.listen():
 
     except Exception as e:
 
-        log("========================================")
-        log("ОШИБКА ОБРАБОТКИ СОБЫТИЯ")
-        log("Тип: " + type(e).__name__)
-        log("str: " + str(e))
-        log("repr: " + repr(e))
-
-        if hasattr(e, "code"):
-            log("КОД VK: " + str(e.code))
-
-        if hasattr(e, "error"):
-            log("ДАННЫЕ VK: " + repr(e.error))
-
-        log(traceback.format_exc())
-        log("========================================")
+        print("========================================")
+        print("ОШИБКА ОБРАБОТКИ СОБЫТИЯ")
+        print("Тип:", type(e).__name__)
+        print("Ошибка:", str(e))
+        print("========================================")
