@@ -1,5 +1,4 @@
 import json
-import os
 import traceback
 
 import vk_api
@@ -12,57 +11,58 @@ from vk_api.utils import get_random_id
 # НАСТРОЙКИ
 # ============================================================
 
+TOKEN = 'vk1.a.Efw0X7zBaULZCW1Nue-9l43ZzkyCryQzDxY6hkI3Xvy9ikOxlU_3NGaaq2Ju-_4dOxbY7kw9bDjXy3BUep633qbKEXPbQB_zv0Y3OyY6Qn4KhK6oJPUMo1F9hadG6rz32U_gR8M2DsNskDCat3DM8EsrxYBNlcTf3XxvuCi3p9qclsz4WEXuwWtAMzy3qi31lC6YGyvHulsxRHVhAlZTrQ'
 GROUP_ID = 239491424
-TOKEN = "vk1.a.Efw0X7zBaULZCW1Nue-9l43ZzkyCryQzDxY6hkI3Xvy9ikOxlU_3NGaaq2Ju-_4dOxbY7kw9bDjXy3BUep633qbKEXPbQB_zv0Y3OyY6Qn4KhK6oJPUMo1F9hadG6rz32U_gR8M2DsNskDCat3DM8EsrxYBNlcTf3XxvuCi3p9qclsz4WEXuwWtAMzy3qi31lC6YGyvHulsxRHVhAlZTrQ"
 
 
 # ============================================================
-# ПРОВЕРКА ТОКЕНА
+# ЗАПУСК
 # ============================================================
 
 print("=== BOT.PY ЗАПУЩЕН ===")
-
-if not TOKEN:
-    print("ОШИБКА: переменная VK_TOKEN не задана")
-    raise RuntimeError("VK_TOKEN не найден в переменных окружения")
-
-print("=== VK_TOKEN найден ===")
 print("=== GROUP_ID:", GROUP_ID, "===")
 
 
 # ============================================================
-# ПОДКЛЮЧЕНИЕ К VK
+# VK API
 # ============================================================
 
-try:
-    print("=== Создаём VK-сессию ===")
+print("=== Создаём VK-сессию ===")
 
-    vk_session = vk_api.VkApi(token=TOKEN)
-    vk = vk_session.get_api()
+vk_session = vk_api.VkApi(token=TOKEN)
+vk = vk_session.get_api()
 
-    print("=== VK API: подключение установлено ===")
+print("=== VK API: подключение установлено ===")
 
-    print("=== Проверяем сообщество ===")
 
-    group_info = vk.groups.getById(group_id=GROUP_ID)
+# ============================================================
+# ПРОВЕРКА СООБЩЕСТВА
+# ============================================================
 
-    if group_info and len(group_info) > 0:
-        print(
-            "=== Сообщество найдено:",
-            group_info[0].get("name", "без названия"),
-            "==="
-        )
+print("=== Проверяем сообщество ===")
 
-    print("=== Подключаем Long Poll ===")
+group_info = vk.groups.getById(group_id=GROUP_ID)
 
-    longpoll = VkBotLongPoll(vk_session, GROUP_ID)
+if not group_info.get("groups"):
+    raise RuntimeError("Сообщество VK не найдено.")
 
-    print("=== Long Poll: подключение установлено ===")
+print(
+    "=== Сообщество найдено:",
+    group_info["groups"][0].get("name"),
+    "==="
+)
 
-except Exception:
-    print("=== ОШИБКА ПРИ ПОДКЛЮЧЕНИИ К VK ===")
-    traceback.print_exc()
-    raise
+
+# ============================================================
+# LONG POLL
+# ============================================================
+
+print("=== Подключаем Long Poll ===")
+
+longpoll = VkBotLongPoll(vk_session, GROUP_ID)
+
+print("=== Long Poll: подключение установлено ===")
+print("=== БОТ ГОТОВ. ОЖИДАЕМ СООБЩЕНИЯ ===")
 
 
 # ============================================================
@@ -199,30 +199,17 @@ def get_keyboard(step):
 
 def send_msg(user_id, text, step=None):
 
-    try:
+    keyboard = None
 
-        keyboard = get_keyboard(step) if step else None
+    if step is not None:
+        keyboard = get_keyboard(step)
 
-        vk.messages.send(
-            user_id=user_id,
-            message=text,
-            random_id=get_random_id(),
-            keyboard=keyboard
-        )
-
-        print(
-            "Сообщение отправлено пользователю",
-            user_id
-        )
-
-    except Exception:
-
-        print(
-            "ОШИБКА ОТПРАВКИ СООБЩЕНИЯ пользователю",
-            user_id
-        )
-
-        traceback.print_exc()
+    vk.messages.send(
+        user_id=user_id,
+        message=text,
+        random_id=get_random_id(),
+        keyboard=keyboard
+    )
 
 
 # ============================================================
@@ -320,248 +307,229 @@ def get_result(product, goal, resources):
 
 
 # ============================================================
-# ПОЛУЧЕНИЕ КОМАНДЫ ИЗ PAYLOAD
+# ОБРАБОТКА СООБЩЕНИЙ
 # ============================================================
 
-def get_command(message):
-
-    payload = message.get("payload")
-
-    if not payload:
-        return None
+for event in longpoll.listen():
 
     try:
-
-        if isinstance(payload, str):
-            payload = json.loads(payload)
-
-        if isinstance(payload, dict):
-            return payload.get("command")
-
-    except (json.JSONDecodeError, TypeError, AttributeError):
-
-        print(
-            "Не удалось разобрать payload:",
-            payload
-        )
-
-    return None
-
-
-# ============================================================
-# ОБРАБОТКА СООБЩЕНИЯ
-# ============================================================
-
-def handle_message(event):
-
-    msg = event.obj.message
-
-    user_id = msg["from_id"]
-
-    text = msg.get("text", "").strip().lower()
-
-    cmd = get_command(msg)
-
-    print(
-        "Сообщение от",
-        user_id,
-        ": text='",
-        text,
-        "', command='",
-        cmd,
-        "'",
-        sep=""
-    )
-
-    # --------------------------------------------------------
-    # НАЧАТЬ / ПРОЙТИ ЗАНОВО
-    # --------------------------------------------------------
-
-    if text == "начать" or cmd == "restart":
-
-        start_test(user_id)
-
-        return
-
-    # --------------------------------------------------------
-    # ВНЕДРИТЬ ПОД КЛЮЧ
-    # --------------------------------------------------------
-
-    if cmd == "consult":
-
-        send_msg(
-            user_id,
-            "🚀 Отлично!\n\n"
-            "Напишите мне в личные сообщения, и обсудим "
-            "настройку вашей воронки:\n"
-            "https://vk.me/club239491424"
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # ЕСЛИ ТЕСТ ЕЩЁ НЕ НАЧАТ
-    # --------------------------------------------------------
-
-    if user_id not in user_progress:
-
-        send_msg(
-            user_id,
-            "Чтобы начать тест, напишите «Начать»."
-        )
-
-        return
-
-    step = user_progress[user_id]["step"]
-
-    # ========================================================
-    # ШАГ 1
-    # ========================================================
-
-    if step == 1:
-
-        if cmd not in {
-            "uslugi",
-            "tovary",
-            "obuchenie"
-        }:
-
-            send_msg(
-                user_id,
-                "Пожалуйста, выберите один из вариантов.",
-                1
-            )
-
-            return
-
-        user_progress[user_id]["product"] = cmd
-        user_progress[user_id]["step"] = 2
-
-        send_msg(
-            user_id,
-            "Какая главная цель запуска?",
-            2
-        )
-
-        return
-
-    # ========================================================
-    # ШАГ 2
-    # ========================================================
-
-    if step == 2:
-
-        if cmd not in {
-            "prodazhi",
-            "progrev",
-            "aktivaciya"
-        }:
-
-            send_msg(
-                user_id,
-                "Пожалуйста, выберите один из вариантов.",
-                2
-            )
-
-            return
-
-        user_progress[user_id]["goal"] = cmd
-        user_progress[user_id]["step"] = 3
-
-        send_msg(
-            user_id,
-            "Сколько ресурсов (времени и денег) готовы вложить?",
-            3
-        )
-
-        return
-
-    # ========================================================
-    # ШАГ 3
-    # ========================================================
-
-    if step == 3:
-
-        if cmd not in {
-            "min",
-            "mid",
-            "max"
-        }:
-
-            send_msg(
-                user_id,
-                "Пожалуйста, выберите один из вариантов.",
-                3
-            )
-
-            return
-
-        user_progress[user_id]["resources"] = cmd
-
-        result = get_result(
-            user_progress[user_id]["product"],
-            user_progress[user_id]["goal"],
-            user_progress[user_id]["resources"]
-        )
-
-        user_progress[user_id]["step"] = 4
-
-        send_msg(
-            user_id,
-            result,
-            4
-        )
-
-        return
-
-    # ========================================================
-    # ШАГ 4
-    # ========================================================
-
-    if step == 4:
-
-        send_msg(
-            user_id,
-            "Тест уже завершён.\n\n"
-            "Если хотите пройти его ещё раз, "
-            "нажмите «Пройти заново».",
-            4
-        )
-
-
-# ============================================================
-# ЗАПУСК LONG POLL
-# ============================================================
-
-print("=== БОТ ГОТОВ. ОЖИДАЕМ СООБЩЕНИЯ ===")
-
-
-try:
-
-    for event in longpoll.listen():
-
-        print(
-            "Получено событие VK:",
-            event.type
-        )
 
         if event.type != VkBotEventType.MESSAGE_NEW:
             continue
 
-        try:
+        msg = event.obj.message
 
-            handle_message(event)
+        user_id = msg["from_id"]
 
-        except Exception:
+        text = msg.get("text", "").strip().lower()
 
-            print("ОШИБКА ОБРАБОТКИ СООБЩЕНИЯ")
-            traceback.print_exc()
+        payload = msg.get("payload")
+
+        cmd = None
 
 
-except Exception:
+        # ----------------------------------------------------
+        # PAYLOAD КНОПКИ
+        # ----------------------------------------------------
 
-    print("КРИТИЧЕСКАЯ ОШИБКА LONG POLL")
-    traceback.print_exc()
+        if payload:
 
-    raise
-```
+            try:
+
+                if isinstance(payload, str):
+                    payload = json.loads(payload)
+
+                if isinstance(payload, dict):
+                    cmd = payload.get("command")
+
+            except (
+                json.JSONDecodeError,
+                TypeError,
+                AttributeError
+            ):
+
+                cmd = None
+
+
+        # ----------------------------------------------------
+        # ЛОГ
+        # ----------------------------------------------------
+
+        print(
+            f"Сообщение от {user_id}: "
+            f"text='{text}', command='{cmd}'"
+        )
+
+
+        # ----------------------------------------------------
+        # НАЧАТЬ ИЛИ ЗАНОВО
+        # ----------------------------------------------------
+
+        if text == "начать" or cmd == "restart":
+
+            start_test(user_id)
+
+            continue
+
+
+        # ----------------------------------------------------
+        # КОНСУЛЬТАЦИЯ
+        # ----------------------------------------------------
+
+        if cmd == "consult":
+
+            send_msg(
+                user_id,
+                "🚀 Отлично!\n\n"
+                "Напишите мне в личные сообщения, и обсудим "
+                "настройку вашей воронки:\n"
+                "https://vk.me/club239491424"
+            )
+
+            continue
+
+
+        # ----------------------------------------------------
+        # ТЕСТ НЕ НАЧАТ
+        # ----------------------------------------------------
+
+        if user_id not in user_progress:
+
+            send_msg(
+                user_id,
+                "Чтобы начать тест, напишите «Начать»."
+            )
+
+            continue
+
+
+        step = user_progress[user_id]["step"]
+
+
+        # ====================================================
+        # ШАГ 1 — ЧТО ПРОДАЁТЕ
+        # ====================================================
+
+        if step == 1:
+
+            if cmd not in {
+                "uslugi",
+                "tovary",
+                "obuchenie"
+            }:
+
+                send_msg(
+                    user_id,
+                    "Пожалуйста, выберите один из вариантов.",
+                    1
+                )
+
+                continue
+
+
+            user_progress[user_id]["product"] = cmd
+
+            user_progress[user_id]["step"] = 2
+
+            send_msg(
+                user_id,
+                "Какая главная цель запуска?",
+                2
+            )
+
+
+        # ====================================================
+        # ШАГ 2 — ЦЕЛЬ
+        # ====================================================
+
+        elif step == 2:
+
+            if cmd not in {
+                "prodazhi",
+                "progrev",
+                "aktivaciya"
+            }:
+
+                send_msg(
+                    user_id,
+                    "Пожалуйста, выберите один из вариантов.",
+                    2
+                )
+
+                continue
+
+
+            user_progress[user_id]["goal"] = cmd
+
+            user_progress[user_id]["step"] = 3
+
+            send_msg(
+                user_id,
+                "Сколько ресурсов (времени и денег) готовы вложить?",
+                3
+            )
+
+
+        # ====================================================
+        # ШАГ 3 — РЕСУРСЫ
+        # ====================================================
+
+        elif step == 3:
+
+            if cmd not in {
+                "min",
+                "mid",
+                "max"
+            }:
+
+                send_msg(
+                    user_id,
+                    "Пожалуйста, выберите один из вариантов.",
+                    3
+                )
+
+                continue
+
+
+            user_progress[user_id]["resources"] = cmd
+
+
+            result = get_result(
+                user_progress[user_id]["product"],
+                user_progress[user_id]["goal"],
+                user_progress[user_id]["resources"]
+            )
+
+
+            user_progress[user_id]["step"] = 4
+
+
+            send_msg(
+                user_id,
+                result,
+                4
+            )
+
+
+        # ====================================================
+        # ШАГ 4 — ТЕСТ ЗАВЕРШЁН
+        # ====================================================
+
+        elif step == 4:
+
+            send_msg(
+                user_id,
+                "Тест уже завершён.\n\n"
+                "Если хотите пройти его ещё раз, "
+                "нажмите «Пройти заново».",
+                4
+            )
+
+
+    except Exception as e:
+
+        print("========================================")
+        print("ОШИБКА ОБРАБОТКИ СООБЩЕНИЯ")
+        print(repr(e))
+        traceback.print_exc()
+        print("========================================")
